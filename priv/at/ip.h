@@ -44,11 +44,11 @@ static inline sim800L_err_t SIM800L_SAPBR(sim800L_t *sim800L, sapbr_input_t *inp
     // SEND AND RECEIVE ANSWER
     sim800L_err_t res;
     if (cmd_type == 0 || cmd_type == 1 || cmd_type == 3)
-        res = SIM800L_SEND_AT_CMD(sim800L, at_cmd, response, sizeof(response) / sizeof(char), 1, 3000);
+        res = SIM800L_SEND_AT_CMD(sim800L, at_cmd, response, sizeof(response) / sizeof(char), 1, 10000);
     else if (cmd_type == 2)
-        res = SIM800L_SEND_AT_CMD(sim800L, at_cmd, response, sizeof(response) / sizeof(char), 2, 3000);
+        res = SIM800L_SEND_AT_CMD(sim800L, at_cmd, response, sizeof(response) / sizeof(char), 2, 10000);
     else if (cmd_type == 4)
-        res = SIM800L_SEND_AT_CMD(sim800L, at_cmd, response, sizeof(response) / sizeof(char), 3, 3000);
+        res = SIM800L_SEND_AT_CMD(sim800L, at_cmd, response, sizeof(response) / sizeof(char), 3, 10000);
     else
         return SIM800L_INVALID_ARG;
 
@@ -64,8 +64,6 @@ static inline sim800L_err_t SIM800L_SAPBR(sim800L_t *sim800L, sapbr_input_t *inp
     }
     else if (cmd_type == 2)
     {
-        assert(output != 0);
-
         char *sapbr = strtok(response, "\r\n:,");
         char *cid = strtok(NULL, "\r\n:,");
         char *status = strtok(NULL, "\r\n:,");
@@ -77,14 +75,15 @@ static inline sim800L_err_t SIM800L_SAPBR(sim800L_t *sim800L, sapbr_input_t *inp
         if (ok == 0 || strcmp(ok, "OK") != 0)
             return SIM800L_ERROR;
 
-        output->cid = atoi(cid);
-        output->status = atoi(status);
-        snprintf(output->ip_addr, 20, "%s", ip_addr);
+        if (output)
+        {
+            output->cid = atoi(cid);
+            output->status = atoi(status);
+            snprintf(output->ip_addr, 20, "%s", ip_addr);
+        }
     }
     else if (cmd_type == 4)
     {
-        assert(output != 0);
-
         char *sapbr = strtok(response, "\r\n:,");
         char *connParamTag = strtok(NULL, "\r\n:,");
         char *connParamValue = strtok(NULL, "\r\n:,");
@@ -95,12 +94,14 @@ static inline sim800L_err_t SIM800L_SAPBR(sim800L_t *sim800L, sapbr_input_t *inp
         if (ok == 0 || strcmp(ok, "OK") != 0)
             return SIM800L_ERROR;
 
-        snprintf(output->connParamTag, 20, "%s", connParamTag);
-        snprintf(output->connParamValue, 20, "%s", connParamValue);
+        if (output)
+        {
+            snprintf(output->connParamTag, 20, "%s", connParamTag);
+            snprintf(output->connParamValue, 20, "%s", connParamValue);
+        }
     }
     else
         return SIM800L_INVALID_ARG;
 
     return SIM800L_OK;
 }
-

@@ -17,3 +17,5 @@
 #include "tcp_ip.h"
 #include "tts.h"
 #include "v25tr.h"
+#include "ntp.h"
+#include "gnss.h"
