@@ -2,6 +2,12 @@
 
 #include "../macros.h"
 
+typedef enum
+{
+    CIP_NORMAL = 0,
+    CIP_TRANSPARENT = 1,
+} cip_mode_t;
+
 static inline sim800L_err_t SIM800L_CIPSHUT(sim800L_t *sim800L)
 {
     char response[20] = {0};
@@ -119,7 +125,7 @@ static inline sim800L_err_t SIM800L_CIFSR(sim800L_t *sim800L, char *ip_addr, int
     return SIM800L_OK;
 }
 
-static inline sim800L_err_t SIM800L_CIPSTART(sim800L_t *sim800L, char *protocol, char *domain, int port, int mode)
+static inline sim800L_err_t SIM800L_CIPSTART(sim800L_t *sim800L, char *protocol, char *domain, int port, cip_mode_t mode)
 {
     char response[30] = {0};
     char at_cmd[100] = {0};
@@ -141,7 +147,7 @@ static inline sim800L_err_t SIM800L_CIPSTART(sim800L_t *sim800L, char *protocol,
 
     if (ok == 0 || strcmp(ok, "OK") != 0)
         return SIM800L_ERROR;
-    if (result == 0 || strcmp(result, mode == 0 ? "CONNECT OK" : "CONNECT") != 0)
+    if (result == 0 || strcmp(result, mode == CIP_NORMAL ? "CONNECT OK" : "CONNECT") != 0)
         return SIM800L_ERROR;
 
     return SIM800L_OK;
@@ -218,13 +224,18 @@ static inline sim800L_err_t SIM800L_CIPCLOSE(sim800L_t *sim800L)
     return SIM800L_OK;
 }
 
-static inline sim800L_err_t SIM800L_CIPSSL(sim800L_t *sim800L, bool enable)
+typedef enum
+{
+    SSL_DISABLED = 0,
+    SSL_ENABLED = 1,
+} ssl_mode_t;
+static inline sim800L_err_t SIM800L_CIPSSL(sim800L_t *sim800L, ssl_mode_t ssl)
 {
     char response[10] = {0};
     char at_cmd[20] = {0};
 
     // MAKE AT COMMAND
-    sprintf(at_cmd, "AT+CIPSSL=%i", enable ? 1 : 0);
+    sprintf(at_cmd, "AT+CIPSSL=%u", ssl);
 
     // SEND AND RECEIVE ANSWER
     sim800L_err_t res;
@@ -241,13 +252,13 @@ static inline sim800L_err_t SIM800L_CIPSSL(sim800L_t *sim800L, bool enable)
     return SIM800L_OK;
 }
 
-static inline sim800L_err_t SIM800L_CIPMODE(sim800L_t *sim800L, int mode)
+static inline sim800L_err_t SIM800L_CIPMODE(sim800L_t *sim800L, cip_mode_t mode)
 {
     char response[10] = {0};
     char at_cmd[20] = {0};
 
     // MAKE AT COMMAND
-    sprintf(at_cmd, "AT+CIPMODE=%i", mode);
+    sprintf(at_cmd, "AT+CIPMODE=%u", mode);
 
     // SEND AND RECEIVE ANSWER
     sim800L_err_t res;

@@ -5,6 +5,8 @@
 
 sim800L_err_t sim800L_init(sim800L_t *sim800L)
 {
+    sim800L->init_periph();
+
     // start-up secuence
 
     switch (sim800L->ctrl.type)
@@ -25,8 +27,7 @@ sim800L_err_t sim800L_init(sim800L_t *sim800L)
         }
         break;
     }
-    default:
-
+    default: // no control
         break;
     }
 
@@ -82,14 +83,16 @@ sim800L_err_t sim800L_deinit(sim800L_t *sim800L)
         }
         break;
     }
-    default:
-
+    default: //made by software
+        SIM800L_CPOWD_WRITE(sim800L, NORMAL_POWER_OFF);
         break;
     }
 
+    sim800L->deinit_periph();
+
     return SIM800L_OK;
 }
-sim800L_err_t sim800_link_net(sim800L_t *sim800L, char *apn, char *username, char *password, int mode)
+sim800L_err_t sim800_link_net(sim800L_t *sim800L, char *apn, char *username, char *password, bool transparent_enabled)
 {
     sim800L_err_t res;
 
@@ -99,7 +102,7 @@ sim800L_err_t sim800_link_net(sim800L_t *sim800L, char *apn, char *username, cha
     if (res != SIM800L_OK)
         return res;
 
-    res = SIM800L_CIPMODE(sim800L, mode);
+    res = SIM800L_CIPMODE(sim800L, transparent_enabled ? CIP_TRANSPARENT : CIP_NORMAL);
     if (res != SIM800L_OK)
         return res;
 
@@ -128,7 +131,7 @@ sim800L_err_t sim800_link_net(sim800L_t *sim800L, char *apn, char *username, cha
     sapbr_input.cmd_type = 3;
     sapbr_input.cid = 1;
     sprintf(sapbr_input.connParamTag, "APN");
-    sprintf(sapbr_input.connParamValue, "entel");
+    sprintf(sapbr_input.connParamValue, apn);
     res = SIM800L_SAPBR(sim800L, &sapbr_input, NULL);
     if (res != SIM800L_OK)
         return res;
@@ -175,18 +178,18 @@ sim800L_err_t sim800_wait_until_detect_signal(sim800L_t *sim800L, int timeout_ms
     return SIM800L_OK;
 }
 
-sim800L_err_t sim800_tcp_req_start(sim800L_t *sim800L, char *domain, int port, int ssl, int mode)
+sim800L_err_t sim800_tcp_req_start(sim800L_t *sim800L, char *domain, int port, bool ssl_enabled, bool transparent_enabled)
 {
     sim800L_err_t res;
 
-    if (ssl > 0)
+    if (ssl_enabled)
     {
-        res = SIM800L_CIPSSL(sim800L, ssl);
+        res = SIM800L_CIPSSL(sim800L, SSL_ENABLED);
         if (res != SIM800L_OK)
             return res;
     }
 
-    res = SIM800L_CIPSTART(sim800L, "TCP", domain, port, mode);
+    res = SIM800L_CIPSTART(sim800L, "TCP", domain, port, transparent_enabled ? CIP_TRANSPARENT : CIP_NORMAL);
     if (res != SIM800L_OK)
     {
         //SIM800L_CIPCLOSE(sim800L);
@@ -222,20 +225,20 @@ sim800L_err_t sim800_tcp_req_end(sim800L_t *sim800L, char *torcv, int torcv_len,
 
 sim800L_err_t sim800_tcp_request(sim800L_t *sim800L, char *domain, int port,
                                  char *pre, uint8_t *body, int size, char *post,
-                                 char *torcv, int torcv_len, int ssl, int mode)
+                                 char *torcv, int torcv_len, bool ssl_enabled, bool transparent_enabled)
 {
     //SIM800L_CIPCLOSE(sim800L);
 
     sim800L_err_t res;
 
-    if (ssl > 0)
+    if (ssl_enabled)
     {
-        res = SIM800L_CIPSSL(sim800L, ssl);
+        res = SIM800L_CIPSSL(sim800L, SSL_ENABLED);
         if (res != SIM800L_OK)
             return res;
     }
 
-    res = SIM800L_CIPSTART(sim800L, "TCP", domain, port, mode);
+    res = SIM800L_CIPSTART(sim800L, "TCP", domain, port, transparent_enabled ? CIP_TRANSPARENT : CIP_NORMAL);
     if (res != SIM800L_OK)
     {
         //SIM800L_CIPCLOSE(sim800L);
@@ -243,7 +246,7 @@ sim800L_err_t sim800_tcp_request(sim800L_t *sim800L, char *domain, int port,
         return res;
     }
 
-    if (mode == 0) // normal
+    if (transparent_enabled == false) // normal
     {
         res = SIM800L_CIPSEND(sim800L, pre, (uint8_t *)body, size, post);
         if (res != SIM800L_OK)
@@ -410,17 +413,19 @@ sim800L_err_t sim800_gps_on(sim800L_t *sim800L)
         res = SIM800L_CGNSPWR_READ(sim800L, &mode);
         if (res == SIM800L_OK && mode == 1)
             break;
+
+        sim800L->delay_ms(100);
     }
     if (mode != 1)
         return res;
 
     return SIM800L_OK;
 }
-sim800L_err_t sim800_gps_read(sim800L_t *sim800L)
+sim800L_err_t sim800_gps_read(sim800L_t *sim800L, int *fixStatus, double *latitude, double *longitude)
 {
     sim800L_err_t res;
 
-    res = SIM800L_CGNSINF_EXE(sim800L);
+    res = SIM800L_CGNSINF_EXE(sim800L, fixStatus, latitude, longitude);
     if (res != SIM800L_OK)
         return res;
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../macros.h"
-
+#include "assert.h"
 typedef struct
 {
     int cmd_type;

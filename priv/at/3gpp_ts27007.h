@@ -152,7 +152,7 @@ static inline sim800L_err_t SIM800L_CCLK_READ(sim800L_t *sim800L, uint32_t *time
     char *hour = strtok(NULL, "\r\n:\"/,+- ");
     char *minute = strtok(NULL, "\r\n:\"/,+- ");
     char *second = strtok(NULL, "\r\n:\"/,+- ");
-    char *zz = strtok(NULL, "\r\n:\"/,+- ");
+    strtok(NULL, "\r\n:\"/,+- ");
     char *ok = strtok(NULL, "\r\n:\"/,+- ");
 
     if (cclk == 0 || strcmp(cclk, "CCLK") != 0)

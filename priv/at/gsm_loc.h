@@ -22,8 +22,8 @@ static inline sim800L_err_t SIM800L_CIPGSMLOC_WRITE(sim800L_t *sim800L, int type
     char *arg1 = strtok(NULL, " ,\r\n");
     char *arg2 = strtok(NULL, " ,\r\n");
     char *arg3 = strtok(NULL, " ,\r\n");
-    char *arg4 = strtok(NULL, " ,\r\n"); //2021/11/24
-    char *arg5 = strtok(NULL, " ,\r\n"); //22:22:19
+    strtok(NULL, " ,\r\n"); //2021/11/24
+    strtok(NULL, " ,\r\n"); //22:22:19
     char *ok = strtok(NULL, " ,\r\n");
 
     if (ok == 0 || (strcmp(ok, "OK") != 0))
