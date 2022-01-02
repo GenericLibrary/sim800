@@ -77,10 +77,7 @@ sim800L_err_t sim800L_deinit(sim800L_t *sim800L)
     }
     case SIM800L_CTRL_PWRKEY:
     {
-        if (sim800L->ctrl.pwrkey_gpio_set_level)
-        {
-            SIM800L_HW_PWRKEY(sim800L); // power on/off
-        }
+        SIM800L_CPOWD_WRITE(sim800L, NORMAL_POWER_OFF);
         break;
     }
     default: //made by software
@@ -166,7 +163,6 @@ sim800L_err_t sim800_wait_until_detect_signal(sim800L_t *sim800L, int timeout_ms
     do
     {
         SIM800L_CSQ(sim800L, &rssi, NULL);
-        //printf("res = %u , rssi:%i , ber:%i\n", res, rssi, ber);
         sim800L->delay_ms(1000);
 
         if (sim800L->get_time_ms() - start >= timeout_ms)
@@ -391,14 +387,7 @@ sim800L_err_t sim800_get_rtc_timestamp(sim800L_t *sim800L, uint32_t *timestamp)
 sim800L_err_t sim800_gps_on(sim800L_t *sim800L)
 {
     sim800L_err_t res;
-    /*
-    res = SIM800L_CGNSTST_WRITE(sim800L, 1);
-    if (res != SIM800L_OK)
-    {
-        printf("func=%s, line=%u, res=%u\n", __func__, __LINE__, res);
-        return res;
-    }
-*/
+
     res = SIM800L_CGNSPWR_WRITE(sim800L, 0);
     if (res != SIM800L_OK)
         return res;
@@ -421,13 +410,41 @@ sim800L_err_t sim800_gps_on(sim800L_t *sim800L)
 
     return SIM800L_OK;
 }
-sim800L_err_t sim800_gps_read(sim800L_t *sim800L, int *fixStatus, double *latitude, double *longitude)
+sim800L_err_t sim800_gps_off(sim800L_t *sim800L)
 {
     sim800L_err_t res;
 
-    res = SIM800L_CGNSINF_EXE(sim800L, fixStatus, latitude, longitude);
+    res = SIM800L_CGNSPWR_WRITE(sim800L, 0);
     if (res != SIM800L_OK)
         return res;
+
+    int mode = 1;
+    for (int i = 0; i < 10; i++)
+    {
+        res = SIM800L_CGNSPWR_READ(sim800L, &mode);
+        if (res == SIM800L_OK && mode == 0)
+            break;
+
+        sim800L->delay_ms(100);
+    }
+    if (mode != 0)
+        return res;
+
+    return SIM800L_OK;
+}
+sim800L_err_t sim800_gps_wait_until_fixed(sim800L_t *sim800L, int *fixStatus, double *lat, double *lon, int timeout_ms)
+{
+    sim800L_err_t res;
+    int64_t start = sim800L->get_time_ms();
+    do
+    {
+        res = SIM800L_CGNSINF_EXE(sim800L, fixStatus, lat, lon);
+
+        if (sim800L->get_time_ms() - start >= timeout_ms)
+            return SIM800L_TIMEOUT;
+        sim800L->delay_ms(1000);
+
+    } while ((*fixStatus == 0) && (res == SIM800L_OK));
 
     return SIM800L_OK;
 }

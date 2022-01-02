@@ -62,7 +62,7 @@ extern "C"
     sim800L_err_t sim800_battery_level(sim800L_t *sim800L, int *mvolt);
     sim800L_err_t sim800_read_adc(sim800L_t *sim800L, int *status, int *value);
     sim800L_err_t sim800_wait_until_detect_signal(sim800L_t *sim800L, int timeout_ms);
-    sim800L_err_t sim800_tcp_req_start(sim800L_t *sim800L, char *domain, int port, bool  ssl_enabled, bool transparent_enabled);
+    sim800L_err_t sim800_tcp_req_start(sim800L_t *sim800L, char *domain, int port, bool ssl_enabled, bool transparent_enabled);
     sim800L_err_t sim800_tcp_req_end(sim800L_t *sim800L, char *torcv, int torcv_len, bool wait_for_answer);
     sim800L_err_t sim800_tcp_request(sim800L_t *sim800L, char *domain, int port,
                                      char *pre, uint8_t *body, int size, char *post,
@@ -71,7 +71,8 @@ extern "C"
     sim800L_err_t sim800_sync_rtc_with_ntp(sim800L_t *sim800L, char *ntp_ip);
     sim800L_err_t sim800_get_rtc_timestamp(sim800L_t *sim800L, uint32_t *timestamp);
     sim800L_err_t sim800_gps_on(sim800L_t *sim800L);
-    sim800L_err_t sim800_gps_read(sim800L_t *sim800L, int *fixStatus, double *latitude, double *longitude);
+    sim800L_err_t sim800_gps_off(sim800L_t *sim800L);
+    sim800L_err_t sim800_gps_wait_until_fixed(sim800L_t *sim800L, int *fixStatus, double *lat, double *lon, int timeout_ms);
     sim800L_err_t sim800_wait_until_detect_gsmloc(sim800L_t *sim800L, int cid, float *lon, float *lat);
 
 #ifdef __cplusplus
